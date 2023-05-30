@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const passport = require("passport");
+const bcrypt = require("bcryptjs");
 
 const User = require("../../models/user");
 
@@ -22,37 +23,60 @@ router.get("/register", (req, res) => {
 });
 
 router.post("/register", (req, res) => {
-  // 取得註冊表單參數
   const { name, email, password, confirmPassword } = req.body;
-  // 檢查使用者是否已經註冊
+  const errs = [];
+
+  if (!name || !email || !password || !confirmPassword) {
+    errs.push({ errMsg: "所有欄位皆為必填" });
+  }
+  if (password !== confirmPassword) {
+    errs.push({ errMsg: "輸入密碼不一致" });
+  }
+  if (errs.length) {
+    return res.render("register", {
+      errs,
+      name,
+      email,
+      password,
+      confirmPassword,
+    });
+  }
+
   User.findOne({ email })
+    .lean()
     .then((user) => {
-      // 如果已經註冊：退回原本畫面
       if (user) {
-        console.log("User already exists.");
+        errs.push({ errMsg: "User already exists." });
         res.render("register", {
+          errs,
           name,
           email,
           password,
           confirmPassword,
         });
-      } else {
-        // 如果還沒註冊：寫入資料庫
-        return User.create({
-          name,
-          email,
-          password,
-        })
-          .then(() => res.redirect("/"))
-          .catch((err) => console.log(err));
       }
+      return bcrypt
+        .genSalt(10)
+        .then((salt) => bcrypt.hash(password, salt))
+        .then((hash) =>
+          User.create({
+            name,
+            email,
+            password: hash,
+          })
+        )
+        .then(() => {
+          req.flash("successMsg", "請用新帳號重新登入");
+          res.redirect("/users/login");
+        })
+        .catch((err) => console.log(err));
     })
     .catch((err) => console.log(err));
 });
 
 router.get("/logout", (req, res) => {
   req.logout();
-  req.flash("success_msg", "你已經成功登出。");
+  req.flash("success_msg", "Logout!");
   res.redirect("/users/login");
 });
 

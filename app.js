@@ -33,8 +33,9 @@ app.use((req, res, next) => {
   console.log(req.user);
   res.locals.isAuthenticated = req.isAuthenticated();
   res.locals.user = req.user; // 在反序列化的時候，取出的 user 資訊，之後會放在 req.user 裡以供後續使用
-  res.locals.successMsg = req.flash("successMsg");
-  res.locals.warningMsg = req.flash("warningMsg");
+  res.locals.success_msg = req.flash("success_msg");
+  res.locals.warning_msg = req.flash("warning_msg");
+
   next();
 });
 

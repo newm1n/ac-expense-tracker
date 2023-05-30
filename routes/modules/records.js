@@ -36,6 +36,7 @@ router.get("/:id/edit", (req, res) => {
         .populate("categoryId")
         .lean()
         .then((item) => {
+          item.date = item.date.toLocaleDateString("zu-Za");
           console.log(item);
           res.render("edit", { item, categories });
         })
